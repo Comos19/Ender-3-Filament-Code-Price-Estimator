@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Print Price Estimator – Ender 3</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: radial-gradient(circle at top, #1b1f46, #0b0e1c);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background: linear-gradient(180deg, #1a1f4a, #14183a);
+      padding: 28px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      margin: 0 0 6px 0;
+      font-size: 1.5rem;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 0.85rem;
+      opacity: 0.7;
+      margin-bottom: 22px;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      opacity: 0.9;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      outline: none;
+      font-size: 0.95rem;
+      background: #0f1333;
+      color: #fff;
+      transition: border 0.2s, background 0.2s;
+    }
+
+    input:focus, select:focus {
+      border: 1px solid #6d8bff;
+      background: #121654;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    button {
+      margin-top: 18px;
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #5b7cfa, #7a95ff);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(91,124,250,0.4);
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 18px;
+      background: linear-gradient(135deg, #0f1435, #0c1028);
+      border-radius: 14px;
+      text-align: center;
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .note {
+      margin-top: 12px;
+      font-size: 0.7rem;
+      opacity: 0.55;
+      text-align: center;
+    }
+
+    @media (max-width: 420px) {
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🖨️ Ender 3 Estimator</h1>
+    <div class="subtitle">Fast & simple 3D print cost calculator</div>
+
+    <div class="field">
+      <label>Print time <span>(hours)</span></label>
+      <input type="number" id="hours" value="2" min="0" step="0.1" />
+    </div>
+
+    <div class="field">
+      <label>Filament used <span>(grams)</span></label>
+      <input type="number" id="grams" value="50" min="0" />
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Material</label>
+        <select id="material">
+          <option value="0.06">PLA</option>
+          <option value="0.08">PETG</option>
+          <option value="0.10">ABS</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Currency</label>
+        <select id="currency">
+          <option value="RON">RON</option>
+          <option value="ROBUX">Robux</option>
+        </select>
+      </div>
+    </div>
+
+        <div class="result" id="result">Price: —</div>
+    <div class="result" id="robuxBreakdown" style="display:none; margin-top:12px; font-size:0.95rem; font-weight:500;"></div>
+    <div class="note">Includes electricity & printer wear. Robux value is fictional. Roblox marketplace fee: 30%.</div>
+  </div>
+
+  <script>
+    const inputs = document.querySelectorAll('#hours, #grams, #material, #currency');
+    inputs.forEach(i => i.addEventListener('input', calculate));
+
+    function calculate() {
+      const hours = parseFloat(document.getElementById('hours').value) || 0;
+      const grams = parseFloat(document.getElementById('grams').value) || 0;
+      const materialCost = parseFloat(document.getElementById('material').value);
+      const currency = document.getElementById('currency').value;
+
+      const electricityPerHour = 1.2; // RON/hour
+      const printerWearPerHour = 0.8; // RON/hour
+      const robloxFee = 0.30; // 30%
+
+      const filamentCost = grams * materialCost;
+      const timeCost = hours * (electricityPerHour + printerWearPerHour);
+      const totalRON = filamentCost + timeCost;
+
+      const resultEl = document.getElementById('result');
+      const robuxEl = document.getElementById('robuxBreakdown');
+
+      if (currency === 'ROBUX') {
+        const robuxRate = 1 / 0.05; // fictional
+        const totalRobux = Math.round(totalRON * robuxRate);
+        const receivedRobux = Math.round(totalRobux * (1 - robloxFee));
+        const feeRobux = totalRobux - receivedRobux;
+
+        resultEl.innerText = `Price: ${totalRobux} Robux`;
+        robuxEl.style.display = 'block';
+        robuxEl.innerText = `You receive: ${receivedRobux} Robux (Fee: ${feeRobux} Robux)`;
+      } else {
+        resultEl.innerText = `Price: ${totalRON.toFixed(2)} RON`;
+        robuxEl.style.display = 'none';
+      }
+    }
+
+    calculate();
+  </script>
+</body>
+</html>
